@@ -103,6 +103,37 @@ app.post("/save-todos", async (req, res) => {
   }
 });
 
+app.patch("/todos/:_id/order", async (req, res) => {
+  const { _id } = req.params;
+  const { destinationIndex } = req.body;
+
+  try {
+    const todos = await Todo.find().sort({ order: 1 });
+
+    const draggedIndex = todos.findIndex((todo) => todo._id.toString() === _id);
+
+    if (draggedIndex === -1) {
+      return res.status(404).json({ message: "Todo not found" });
+    }
+
+    const [draggedTodo] = todos.splice(draggedIndex, 1);
+    todos.splice(destinationIndex, 0, draggedTodo);
+
+    const bulkOps = todos.map((todo, index) => ({
+      updateOne: {
+        filter: { _id: todo._id },
+        update: { order: index },
+      },
+    }));
+
+    await Todo.bulkWrite(bulkOps);
+
+    res.json({ message: "Order updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
