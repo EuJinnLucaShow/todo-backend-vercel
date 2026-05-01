@@ -43,9 +43,13 @@ app.post("/todos", async (req, res) => {
   const { title, completed } = req.body;
 
   try {
-    const count = await Todo.countDocuments();
-    const newTodo = new Todo({ title, completed, order: count });
+    const topTodo = await Todo.findOne().sort({ order: 1 });
+
+    const newOrder = topTodo ? topTodo.order - 1 : 0;
+
+    const newTodo = new Todo({ title, completed, order: newOrder });
     const savedTodo = await newTodo.save();
+
     res.status(201).json(savedTodo);
   } catch (error) {
     res.status(400).json({ message: error.message });
